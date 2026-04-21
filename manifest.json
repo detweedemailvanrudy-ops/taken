@@ -2,7 +2,7 @@
   "name": "Takkie",
   "short_name": "Takkie",
   "description": "Takenlijst met subtaken",
-  "start_url": "/index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#fff7ed",
   "theme_color": "#fff7ed",
