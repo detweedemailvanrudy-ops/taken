@@ -3,36 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskMaster PWA</title>
+    <title>TaskMaster Pro PWA</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <meta name="theme-color" content="#4A90E2">
 </head>
 <body>
     <header>
-        <h1>Mijn Taken</h1>
+        <h1>TaskMaster Pro</h1>
         <button id="add-task-btn">+</button>
     </header>
 
     <main id="app">
-        <section id="category-section">
-            <h3>Categorieën</h3>
-            <div id="category-list" class="horizontal-scroll"></div>
+        <section id="task-section">
+            <h2>Planning</h2>
+            <div id="task-list"></div>
         </section>
 
-        <section id="task-section">
-            <h3>Planning</h3>
-            <div id="task-list"></div>
+        <section id="backlog-section">
+            <h2>Ongeplande Taken</h2>
+            <div id="backlog-list"></div>
+        </section>
+
+        <section id="category-manager">
+            <h2>Categorie Beheer</h2>
+            <div class="input-group">
+                <input type="text" id="new-cat-title" placeholder="Nieuwe categorie...">
+                <input type="color" id="new-cat-color" value="#4A90E2">
+                <button id="save-cat-btn" onclick="addCategory()">Toevoegen</button>
+            </div>
+            <div id="category-edit-list"></div>
         </section>
     </main>
 
     <div id="task-modal" class="modal">
         <div class="modal-content">
-            <input type="text" id="task-title" placeholder="Wat ga je doen?">
-            <input type="datetime-local" id="task-date">
+            <h3>Nieuwe Taak</h3>
+            <input type="text" id="task-title" placeholder="Wat moet er gebeuren?">
             <select id="task-category"></select>
-            <button onclick="saveTask()">Opslaan</button>
-            <button onclick="closeModal()">Annuleren</button>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="saveTask()">Opslaan</button>
+                <button class="btn-secondary" onclick="closeModal()">Annuleren</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="planning-modal" class="modal">
+        <div class="modal-content">
+            <h3>Datum & Tijd kiezen</h3>
+            <input type="datetime-local" id="plan-date">
+            <input type="hidden" id="plan-task-id">
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="confirmPlan()">Bevestigen</button>
+                <button class="btn-secondary" onclick="closePlanningModal()">Annuleren</button>
+            </div>
         </div>
     </div>
 

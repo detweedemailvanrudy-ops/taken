@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taskmaster-v1';
+const CACHE_NAME = 'taskmaster-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,6 @@ const ASSETS = [
   './manifest.json'
 ];
 
-// Installeren van de Service Worker
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -16,7 +15,6 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// Bestanden serveren vanuit de cache
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((response) => {
