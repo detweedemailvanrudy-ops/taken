@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskMaster Pro PWA</title>
+    <title>TaskMaster Pro</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <meta name="theme-color" content="#4A90E2">
 </head>
 <body>
+    <div id="side-menu" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Instellingen</h3>
+            <button onclick="toggleMenu()">×</button>
+        </div>
+        <div class="sidebar-content">
+            <h4>Categorie Beheer</h4>
+            <div class="cat-input-group">
+                <input type="text" id="new-cat-title" placeholder="Naam...">
+                <div class="color-picker-wrapper">
+                    <input type="color" id="new-cat-color" value="#4A90E2">
+                </div>
+                <button onclick="addCategory()">+</button>
+            </div>
+            <div id="category-edit-list"></div>
+        </div>
+    </div>
+
     <header>
+        <button id="menu-btn" onclick="toggleMenu()">☰</button>
         <h1>TaskMaster Pro</h1>
         <button id="add-task-btn">+</button>
     </header>
@@ -21,18 +40,13 @@
         </section>
 
         <section id="backlog-section">
-            <h2>Ongeplande Taken</h2>
+            <h2>Backlog</h2>
             <div id="backlog-list"></div>
         </section>
 
-        <section id="category-manager">
-            <h2>Categorie Beheer</h2>
-            <div class="input-group">
-                <input type="text" id="new-cat-title" placeholder="Nieuwe categorie...">
-                <input type="color" id="new-cat-color" value="#4A90E2">
-                <button id="save-cat-btn" onclick="addCategory()">Toevoegen</button>
-            </div>
-            <div id="category-edit-list"></div>
+        <section id="completed-section">
+            <h2>Voltooid</h2>
+            <div id="completed-list"></div>
         </section>
     </main>
 
@@ -50,7 +64,7 @@
 
     <div id="planning-modal" class="modal">
         <div class="modal-content">
-            <h3>Datum & Tijd kiezen</h3>
+            <h3>Datum kiezen</h3>
             <input type="datetime-local" id="plan-date">
             <input type="hidden" id="plan-task-id">
             <div class="modal-actions">
@@ -61,10 +75,5 @@
     </div>
 
     <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
 </body>
 </html>
