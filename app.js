@@ -72,7 +72,6 @@ function createTaskCard(task, context) {
                 <span class="${task.completed ? 'completed' : ''}">${task.title}</span>
             </div>`;
     } else {
-        // In Takenbeheer: Nooit een vinkje en nooit doorstreept
         headerHTML += `<strong>${task.title}</strong>`;
     }
     
@@ -92,7 +91,6 @@ function createTaskCard(task, context) {
     contentHTML += `<div class="subtasks-container">${renderSubtasks(task.subtasks, task.id, context)}</div>`;
 
     contentHTML += `<div style="display:flex; gap:8px; margin-top:10px;">`;
-    
     if (isManage) {
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Subtaak</button>`;
         contentHTML += `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">${task.date ? 'Herplannen' : 'Inplannen'}</button>`;
@@ -101,7 +99,6 @@ function createTaskCard(task, context) {
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Heractiveren</button>`;
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons" style="font-size:1.2rem">delete</span></button>`;
     }
-    
     contentHTML += `</div></div>`;
     div.innerHTML = headerHTML + contentHTML;
     return div;
@@ -111,7 +108,6 @@ function renderSubtasks(subtasks, parentId, context) {
     if (!subtasks || subtasks.length === 0) return '';
     const isPlanning = context === 'planning' || context === 'completed';
     const isManage = context === 'manage';
-
     return `<ul class="subtask-list">` + subtasks.map(st => `
         <li class="subtask-item">
             <div class="check-container">
@@ -124,7 +120,6 @@ function renderSubtasks(subtasks, parentId, context) {
     `).join('') + `</ul>`;
 }
 
-// --- SLIMME AFVINK LOGICA ---
 function toggleComplete(e, id) {
     e.stopPropagation();
     const task = tasks.find(x => x.id === id);
@@ -162,7 +157,6 @@ function checkParentStatus(list) {
     });
 }
 
-// --- LOGICA ACTIES ---
 function findTaskById(list, id) {
     for (let t of list) {
         if (t.id === id) return t;
@@ -221,17 +215,17 @@ function deleteTask(id) { if(confirm("Taak definitief verwijderen?")) { tasks = 
 function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; saveAndRender(); }
 function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
 
-// --- CATEGORIES RENDER (CLEAN) ---
+// --- CATEGORIES RENDER (CLEAN & FIXED) ---
 function renderCategoryList() {
-    const container = document.getElementById('category-edit-list');
+    const container = document.getElementById('category-manager-container');
     container.innerHTML = `
         <div class="category-card">
             <h3 style="margin-top:0">Beheer Categorieën</h3>
-            <div id="cat-items">
+            <div id="cat-items-list">
                 ${categories.map(c => `
                     <div class="category-item">
                         <div style="display:flex; align-items:center; gap:12px">
-                            <div style="width:18px; height:18px; border-radius:50%; background:${c.color}"></div>
+                            <div style="width:18px; height:18px; border-radius:50%; background:${c.color}; border:1px solid rgba(0,0,0,0.1)"></div>
                             <span>${c.title}</span>
                         </div>
                         <button class="icon-btn" style="color:#ff7675" onclick="deleteCategory('${c.id}')">
@@ -240,10 +234,10 @@ function renderCategoryList() {
                     </div>
                 `).join('')}
             </div>
-            <div class="cat-input-area">
-                <input type="text" id="new-cat-title" placeholder="Naam...">
+            <div class="cat-input-area" style="margin-top:20px; border-top:1px solid #f1f3f5; padding-top:15px;">
+                <input type="text" id="new-cat-title-input" placeholder="Nieuwe categorie...">
                 <div class="color-picker-wrapper">
-                    <input type="color" id="new-cat-color" value="#4A90E2">
+                    <input type="color" id="new-cat-color-input" value="#4A90E2">
                 </div>
                 <button class="btn-icon-round" onclick="addCategory()">
                     <span class="material-icons">add</span>
@@ -254,15 +248,28 @@ function renderCategoryList() {
 }
 
 function addCategory() {
-    const t = document.getElementById('new-cat-title').value;
-    const c = document.getElementById('new-cat-color').value;
-    if(t) { categories.push({ id: 'c-'+Date.now(), title: t, color: c }); saveAndRender(); }
+    const titleInput = document.getElementById('new-cat-title-input');
+    const colorInput = document.getElementById('new-cat-color-input');
+    const t = titleInput.value.trim();
+    const c = colorInput.value;
+    
+    if(t) {
+        categories.push({ id: 'c-'+Date.now(), title: t, color: c });
+        saveAndRender();
+        // Na renderAll wordt de lijst opnieuw getekend, dus input is weer leeg
+    } else {
+        alert("Vul een naam in voor de categorie.");
+    }
 }
 
 function deleteCategory(id) { 
     if(categories.length > 1) { 
-        categories = categories.filter(x => x.id !== id); 
-        saveAndRender(); 
+        if(confirm("Weet je zeker dat je deze categorie wilt verwijderen?")) {
+            categories = categories.filter(x => x.id !== id); 
+            saveAndRender(); 
+        }
+    } else {
+        alert("Je moet minimaal één categorie behouden.");
     }
 }
 

@@ -48,19 +48,7 @@
         </section>
 
         <section id="view-categories" class="app-view" style="display:none;">
-            <div class="card">
-                <h3>Nieuwe Categorie</h3>
-                <div class="cat-input-group">
-                    <input type="text" id="new-cat-title" placeholder="Naam...">
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="new-cat-color" value="#4A90E2">
-                    </div>
-                    <button class="btn-icon-round" onclick="addCategory()">
-                        <span class="material-icons">add</span>
-                    </button>
-                </div>
-                <div id="category-edit-list"></div>
-            </div>
+            <div id="category-manager-container"></div>
         </section>
 
         <section id="view-completed" class="app-view" style="display:none;">
@@ -74,7 +62,7 @@
 
     <div id="task-modal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-task-title">Nieuwe Taak</h3>
+            <h3 id="modal-task-title">Taak</h3>
             <input type="hidden" id="edit-task-id">
             <input type="text" id="task-title-input" placeholder="Wat gaan we doen?">
             <select id="task-category-select"></select>
