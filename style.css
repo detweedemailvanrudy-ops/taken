@@ -64,9 +64,13 @@ header {
 
 /* Utils */
 .completed { text-decoration: line-through; color: var(--grey); }
-.check-container { display: flex; align-items: center; gap: 10px; }
+.check-container { display: flex; align-items: center; gap: 10px; flex: 1; }
 input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
-.cat-input-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.sort-bar { background: #fff; padding: 10px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; box-shadow: var(--shadow); }
+
+.subtask-list { list-style: none; padding-left: 15px; border-left: 2px solid #f1f3f5; margin: 10px 0; }
+.subtask-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.95rem; }
+
 .color-picker-wrapper { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; flex-shrink: 0; }
 input[type="color"] { width: 60px; height: 60px; transform: translate(-10px, -10px); cursor: pointer; }
 .btn-icon-round { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }

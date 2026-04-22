@@ -32,22 +32,19 @@
 
     <main id="app">
         <section id="view-planning" class="app-view">
+            <div class="sort-bar">
+                <span>Sorteer op:</span>
+                <select id="sort-select" onchange="renderAll()">
+                    <option value="date">Datum (Tijd)</option>
+                    <option value="cat">Categorie</option>
+                    <option value="alpha">Alfabetisch</option>
+                </select>
+            </div>
             <div id="task-list"></div>
         </section>
 
         <section id="view-manage" class="app-view" style="display:none;">
-            <div class="sort-bar">
-                <span>Sorteer:</span>
-                <select id="sort-select" onchange="renderAll()">
-                    <option value="date">Nieuwste eerst</option>
-                    <option value="alpha">Alfabetisch</option>
-                    <option value="cat">Categorie</option>
-                </select>
-            </div>
             <div id="manage-all-list"></div>
-            <button class="fab" onclick="openNewTaskModal()">
-                <span class="material-icons">add</span>
-            </button>
         </section>
 
         <section id="view-categories" class="app-view" style="display:none;">
@@ -69,6 +66,10 @@
         <section id="view-completed" class="app-view" style="display:none;">
             <div id="completed-list"></div>
         </section>
+        
+        <button class="fab" onclick="openNewTaskModal()">
+            <span class="material-icons">add</span>
+        </button>
     </main>
 
     <div id="task-modal" class="modal">

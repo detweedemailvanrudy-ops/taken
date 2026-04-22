@@ -8,7 +8,7 @@ function showView(viewId) {
     document.querySelectorAll('.app-view').forEach(v => v.style.display = 'none');
     document.getElementById('view-' + viewId).style.display = 'block';
     
-    const titles = { 'planning': 'Mijn Planning', 'manage': 'Takenbeheer', 'categories': 'Categorieën', 'completed': 'Voltooid' };
+    const titles = { 'planning': 'Planning', 'manage': 'Takenbeheer', 'categories': 'Categorieën', 'completed': 'Voltooid' };
     document.getElementById('view-title').innerText = titles[viewId];
     if (document.getElementById('side-menu').classList.contains('open')) toggleMenu();
     renderAll();
@@ -33,27 +33,29 @@ function renderAll() {
 
 function renderPlanning() {
     const list = document.getElementById('task-list');
-    list.innerHTML = '<h2>Vandaag / Binnenkort</h2>';
-    const planned = tasks.filter(t => t.date && !t.completed).sort((a,b) => new Date(a.date) - new Date(b.date));
+    const sortVal = document.getElementById('sort-select').value;
+    list.innerHTML = '';
+    
+    let planned = tasks.filter(t => t.date && !t.completed);
+
+    if (sortVal === 'alpha') planned.sort((a,b) => a.title.localeCompare(b.title));
+    else if (sortVal === 'cat') planned.sort((a,b) => a.categoryId.localeCompare(b.categoryId));
+    else planned.sort((a,b) => new Date(a.date) - new Date(b.date));
+
     planned.forEach(t => list.appendChild(createTaskCard(t, 'planning')));
 }
 
 function renderManage() {
     const list = document.getElementById('manage-all-list');
-    const sortVal = document.getElementById('sort-select').value;
     list.innerHTML = '';
-    let filtered = tasks.filter(t => !t.completed);
-
-    if (sortVal === 'alpha') filtered.sort((a,b) => a.title.localeCompare(b.title));
-    else if (sortVal === 'cat') filtered.sort((a,b) => a.categoryId.localeCompare(b.categoryId));
-    else filtered.sort((a,b) => b.id.localeCompare(a.id));
-
-    filtered.forEach(t => list.appendChild(createTaskCard(t, 'manage')));
+    // In beheer tonen we alle onvoltooide taken, gesorteerd op creatie (nieuwste boven)
+    const all = tasks.filter(t => !t.completed).sort((a,b) => b.id.localeCompare(a.id));
+    all.forEach(t => list.appendChild(createTaskCard(t, 'manage')));
 }
 
 function renderCompleted() {
     const list = document.getElementById('completed-list');
-    list.innerHTML = '<h2>Geschiedenis</h2>';
+    list.innerHTML = '';
     tasks.filter(t => t.completed).forEach(t => list.appendChild(createTaskCard(t, 'completed')));
 }
 
@@ -63,49 +65,77 @@ function createTaskCard(task, context) {
     div.className = `task-card ${task.expanded ? 'expanded' : ''}`;
     div.style.borderLeft = `6px solid ${cat.color}`;
     
-    div.innerHTML = `
-        <div class="task-header" onclick="toggleExpand('${task.id}')">
+    const isPlanning = context === 'planning' || context === 'completed';
+    const isManage = context === 'manage';
+
+    // Header sectie: Vinkje alleen in Planning/Completed. In Manage alleen titel.
+    let headerHTML = `<div class="task-header" onclick="toggleExpand('${task.id}')">`;
+    if (isPlanning) {
+        headerHTML += `
             <div class="check-container">
                 <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleComplete(event, '${task.id}')">
                 <span class="${task.completed ? 'completed' : ''}">${task.title}</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-                ${context === 'manage' ? `<button class="icon-btn" style="color:var(--primary)" onclick="event.stopPropagation(); openEditTaskModal('${task.id}')"><span class="material-icons">edit</span></button>` : ''}
-                <span class="material-icons" style="color:#ccc">${task.expanded ? 'expand_more' : 'chevron_right'}</span>
-            </div>
+            </div>`;
+    } else {
+        headerHTML += `<strong>${task.title}</strong>`;
+    }
+    
+    headerHTML += `
+        <div style="display:flex; align-items:center; gap:8px;">
+            ${isManage ? `<button class="icon-btn" style="color:var(--primary)" onclick="event.stopPropagation(); openEditTaskModal('${task.id}')"><span class="material-icons">edit</span></button>` : ''}
+            <span class="material-icons" style="color:#ccc">${task.expanded ? 'expand_more' : 'chevron_right'}</span>
         </div>
-        <div class="task-content">
-            <div style="font-size:0.8rem; color:#888; margin-bottom:10px;">
-                <span class="material-icons" style="font-size:0.9rem">category</span> ${cat.title}
-                ${task.date ? ` | <span class="material-icons" style="font-size:0.9rem">schedule</span> ` + new Date(task.date).toLocaleString('nl-NL') : ''}
-            </div>
-            <div class="subtasks-container">${renderSubtasks(task.subtasks, task.id)}</div>
-            <div style="display:flex; gap:8px; margin-top:10px;">
-                <button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Sub</button>
-                ${!task.date && !task.completed ? `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">Inplannen</button>` : ''}
-                ${task.completed ? `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Hergebruik</button>` : ''}
-                <button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')">Wis</button>
-            </div>
-        </div>
-    `;
+    </div>`;
+
+    // Content sectie
+    let contentHTML = `<div class="task-content">`;
+    
+    // Meta info: Alleen datum tonen in Planning
+    contentHTML += `<div style="font-size:0.8rem; color:#888; margin-bottom:10px;">
+        <span class="material-icons" style="font-size:0.9rem">category</span> ${cat.title}
+        ${isPlanning && task.date ? ` | <span class="material-icons" style="font-size:0.9rem">schedule</span> ` + new Date(task.date).toLocaleString('nl-NL') : ''}
+    </div>`;
+
+    // Subtaken: Vinkjes in Planning, Add-knopjes in Manage
+    contentHTML += `<div class="subtasks-container">${renderSubtasks(task.subtasks, task.id, context)}</div>`;
+
+    // Actieknoppen onderaan
+    contentHTML += `<div style="display:flex; gap:8px; margin-top:10px;">`;
+    if (isManage) {
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Subtaak</button>`;
+        if (!task.date) {
+            contentHTML += `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">Inplannen</button>`;
+        }
+    }
+    if (task.completed) {
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Herplan</button>`;
+    }
+    contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>`;
+    
+    contentHTML += `</div></div>`;
+    
+    div.innerHTML = headerHTML + contentHTML;
     return div;
 }
 
-function renderSubtasks(subtasks, parentId) {
+function renderSubtasks(subtasks, parentId, context) {
     if (!subtasks || subtasks.length === 0) return '';
-    return `<ul style="list-style:none; padding-left:15px; border-left:2px solid #eee; margin:10px 0;">` + subtasks.map(st => `
-        <li style="display:flex; justify-content:space-between; margin-bottom:5px;">
+    const isPlanning = context === 'planning' || context === 'completed';
+    const isManage = context === 'manage';
+
+    return `<ul class="subtask-list">` + subtasks.map(st => `
+        <li class="subtask-item">
             <div class="check-container">
-                <input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubComplete(event, '${st.id}')">
+                ${isPlanning ? `<input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubComplete(event, '${st.id}')">` : ''}
                 <span class="${st.completed ? 'completed' : ''}">${st.title}</span>
             </div>
-            <button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')"><span class="material-icons" style="font-size:1.1rem">add_circle</span></button>
+            ${isManage ? `<button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')"><span class="material-icons" style="font-size:1.1rem">add_circle</span></button>` : ''}
         </li>
-        ${renderSubtasks(st.subtasks, st.id)}
+        ${renderSubtasks(st.subtasks, st.id, context)}
     `).join('') + `</ul>`;
 }
 
-// --- ACTIES ---
+// --- LOGICA ACTIES ---
 function findTaskById(list, id) {
     for (let t of list) {
         if (t.id === id) return t;
@@ -147,11 +177,7 @@ function handleSaveTask() {
 }
 
 function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
-
-function openPlanningModal(id) { 
-    document.getElementById('plan-task-id').value = id; 
-    document.getElementById('planning-modal').style.display = 'flex'; 
-}
+function openPlanningModal(id) { document.getElementById('plan-task-id').value = id; document.getElementById('planning-modal').style.display = 'flex'; }
 function closePlanningModal() { document.getElementById('planning-modal').style.display = 'none'; }
 
 function confirmPlan() {
@@ -168,12 +194,9 @@ function addSubTaskPrompt(parentId) {
 
 function deleteTask(id) { if(confirm("Taak verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
 function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; t.date = null; saveAndRender(); showView('manage'); }
+function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
 
-function populateCatSelect() { 
-    document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); 
-}
-
-// --- CATEGORIEËN ---
+// --- CATEGORIES ---
 function renderCategoryList() {
     document.getElementById('category-edit-list').innerHTML = categories.map(c => `
         <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; align-items:center;">
