@@ -36,6 +36,7 @@ function renderPlanning() {
     const sortVal = document.getElementById('sort-select').value;
     list.innerHTML = '';
     
+    // Alleen geplande taken die NOG NIET voltooid zijn
     let planned = tasks.filter(t => t.date && !t.completed);
 
     if (sortVal === 'alpha') planned.sort((a,b) => a.title.localeCompare(b.title));
@@ -48,7 +49,7 @@ function renderPlanning() {
 function renderManage() {
     const list = document.getElementById('manage-all-list');
     list.innerHTML = '';
-    // In beheer tonen we alle onvoltooide taken, gesorteerd op creatie (nieuwste boven)
+    // In beheer tonen we ALLES (ongepland en gepland), behalve wat voltooid is
     const all = tasks.filter(t => !t.completed).sort((a,b) => b.id.localeCompare(a.id));
     all.forEach(t => list.appendChild(createTaskCard(t, 'manage')));
 }
@@ -68,7 +69,6 @@ function createTaskCard(task, context) {
     const isPlanning = context === 'planning' || context === 'completed';
     const isManage = context === 'manage';
 
-    // Header sectie: Vinkje alleen in Planning/Completed. In Manage alleen titel.
     let headerHTML = `<div class="task-header" onclick="toggleExpand('${task.id}')">`;
     if (isPlanning) {
         headerHTML += `
@@ -87,33 +87,28 @@ function createTaskCard(task, context) {
         </div>
     </div>`;
 
-    // Content sectie
     let contentHTML = `<div class="task-content">`;
-    
-    // Meta info: Alleen datum tonen in Planning
     contentHTML += `<div style="font-size:0.8rem; color:#888; margin-bottom:10px;">
         <span class="material-icons" style="font-size:0.9rem">category</span> ${cat.title}
-        ${isPlanning && task.date ? ` | <span class="material-icons" style="font-size:0.9rem">schedule</span> ` + new Date(task.date).toLocaleString('nl-NL') : ''}
+        ${task.date ? ` | <span class="material-icons" style="font-size:0.9rem">schedule</span> ` + new Date(task.date).toLocaleString('nl-NL') : ''}
     </div>`;
 
-    // Subtaken: Vinkjes in Planning, Add-knopjes in Manage
     contentHTML += `<div class="subtasks-container">${renderSubtasks(task.subtasks, task.id, context)}</div>`;
 
-    // Actieknoppen onderaan
     contentHTML += `<div style="display:flex; gap:8px; margin-top:10px;">`;
     if (isManage) {
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Subtaak</button>`;
         if (!task.date) {
             contentHTML += `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">Inplannen</button>`;
         }
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>`;
     }
     if (task.completed) {
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Herplan</button>`;
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>`;
     }
-    contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>`;
     
     contentHTML += `</div></div>`;
-    
     div.innerHTML = headerHTML + contentHTML;
     return div;
 }
@@ -135,6 +130,56 @@ function renderSubtasks(subtasks, parentId, context) {
     `).join('') + `</ul>`;
 }
 
+// --- SLIMME AFVINK LOGICA ---
+function toggleComplete(e, id) {
+    e.stopPropagation();
+    const task = tasks.find(x => x.id === id);
+    if(task) {
+        task.completed = !task.completed;
+        // Cascade: Als hoofdtaak afgevinkt wordt, vink alle subtaken mee
+        if (task.subtasks) {
+            setAllSubtasks(task.subtasks, task.completed);
+        }
+        saveAndRender();
+    }
+}
+
+function setAllSubtasks(subList, status) {
+    subList.forEach(s => {
+        s.completed = status;
+        if (s.subtasks) setAllSubtasks(s.subtasks, status);
+    });
+}
+
+function toggleSubComplete(e, subId) {
+    e.stopPropagation();
+    // 1. Zoek de subtaak en wissel status
+    const sub = findTaskById(tasks, subId);
+    if(!sub) return;
+    sub.completed = !sub.completed;
+
+    // 2. Cascade naar beneden (sub-sub-taken)
+    if (sub.subtasks) setAllSubtasks(sub.subtasks, sub.completed);
+
+    // 3. Check naar boven (moet de ouder nu ook voltooid zijn?)
+    checkParentStatus(tasks);
+    
+    saveAndRender();
+}
+
+function checkParentStatus(list) {
+    list.forEach(parent => {
+        if (parent.subtasks && parent.subtasks.length > 0) {
+            // Check eerst de kinderen van deze parent (recursief)
+            checkParentStatus(parent.subtasks);
+            
+            // Als alle kinderen voltooid zijn, vink parent aan. Anders uit.
+            const allDone = parent.subtasks.every(s => s.completed);
+            parent.completed = allDone;
+        }
+    });
+}
+
 // --- LOGICA ACTIES ---
 function findTaskById(list, id) {
     for (let t of list) {
@@ -145,8 +190,6 @@ function findTaskById(list, id) {
 }
 
 function toggleExpand(id) { const t = findTaskById(tasks, id); if(t) { t.expanded = !t.expanded; saveAndRender(); } }
-function toggleComplete(e, id) { e.stopPropagation(); const t = tasks.find(x => x.id === id); if(t) { t.completed = !t.completed; saveAndRender(); } }
-function toggleSubComplete(e, id) { e.stopPropagation(); const s = findTaskById(tasks, id); if(s) { s.completed = !s.completed; saveAndRender(); } }
 
 function openNewTaskModal() {
     document.getElementById('modal-task-title').innerText = "Nieuwe Taak";
@@ -192,11 +235,10 @@ function addSubTaskPrompt(parentId) {
     if(p && title) { p.subtasks.push({ id: 'st-'+Date.now(), title, completed: false, subtasks: [] }); p.expanded = true; saveAndRender(); }
 }
 
-function deleteTask(id) { if(confirm("Taak verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
+function deleteTask(id) { if(confirm("Taak definitief verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
 function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; t.date = null; saveAndRender(); showView('manage'); }
 function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
 
-// --- CATEGORIES ---
 function renderCategoryList() {
     document.getElementById('category-edit-list').innerHTML = categories.map(c => `
         <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; align-items:center;">
