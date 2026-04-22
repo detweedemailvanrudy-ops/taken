@@ -1,0 +1,149 @@
+:root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --primary: #4A90E2;
+    --text: #333;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+header {
+    background: var(--primary);
+    color: white;
+    padding: env(safe-area-inset-top) 20px 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+header h1 { font-size: 1.4rem; margin: 0; }
+
+#add-task-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    color: var(--primary);
+    font-size: 28px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Categorie chips */
+.horizontal-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 15px;
+    gap: 12px;
+    scrollbar-width: none;
+}
+
+.category-chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: white;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 2px solid transparent;
+}
+
+/* Takenlijst */
+#task-list { padding: 10px; }
+
+.task-card {
+    background: var(--card);
+    margin-bottom: 15px;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    position: relative;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.task-title { font-weight: bold; font-size: 1.1rem; }
+.task-date { font-size: 0.8rem; color: #666; }
+
+/* Subtaken recursie */
+.subtask-list {
+    list-style: none;
+    padding-left: 20px;
+    margin: 10px 0;
+    border-left: 2px solid #eee;
+}
+
+.subtask-item {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btn-add-sub {
+    background: #f0f0f0;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 400px;
+    padding: 25px;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input, select {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px; /* Belangrijk voor iOS/Android zoom */
+}
+
+.btn-save {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: bold;
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TaskMaster PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#4A90E2">
+</head>
+<body>
+    <header>
+        <h1>Mijn Taken</h1>
+        <button id="add-task-btn">+</button>
+    </header>
+
+    <main id="app">
+        <section id="category-section">
+            <h3>Categorieën</h3>
+            <div id="category-list" class="horizontal-scroll"></div>
+        </section>
+
+        <section id="task-section">
+            <h3>Planning</h3>
+            <div id="task-list"></div>
+        </section>
+    </main>
+
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <input type="text" id="task-title" placeholder="Wat ga je doen?">
+            <input type="datetime-local" id="task-date">
+            <select id="task-category"></select>
+            <button onclick="saveTask()">Opslaan</button>
+            <button onclick="closeModal()">Annuleren</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
