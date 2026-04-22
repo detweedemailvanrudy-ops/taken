@@ -36,7 +36,6 @@ function renderPlanning() {
     const sortVal = document.getElementById('sort-select').value;
     list.innerHTML = '';
     
-    // Alleen geplande taken die NOG NIET voltooid zijn
     let planned = tasks.filter(t => t.date && !t.completed);
 
     if (sortVal === 'alpha') planned.sort((a,b) => a.title.localeCompare(b.title));
@@ -48,9 +47,9 @@ function renderPlanning() {
 
 function renderManage() {
     const list = document.getElementById('manage-all-list');
-    list.innerHTML = '';
-    // In beheer tonen we ALLES (ongepland en gepland), behalve wat voltooid is
-    const all = tasks.filter(t => !t.completed).sort((a,b) => b.id.localeCompare(a.id));
+    list.innerHTML = '<h2 style="font-size:1rem; color:var(--grey); margin-bottom:15px;">Alle taken (Backlog)</h2>';
+    // HIER: Geen filter meer op 'completed', zodat alles zichtbaar blijft
+    const all = [...tasks].sort((a,b) => b.id.localeCompare(a.id));
     all.forEach(t => list.appendChild(createTaskCard(t, 'manage')));
 }
 
@@ -77,7 +76,7 @@ function createTaskCard(task, context) {
                 <span class="${task.completed ? 'completed' : ''}">${task.title}</span>
             </div>`;
     } else {
-        headerHTML += `<strong>${task.title}</strong>`;
+        headerHTML += `<strong class="${task.completed ? 'completed' : ''}">${task.title}</strong>`;
     }
     
     headerHTML += `
@@ -96,16 +95,15 @@ function createTaskCard(task, context) {
     contentHTML += `<div class="subtasks-container">${renderSubtasks(task.subtasks, task.id, context)}</div>`;
 
     contentHTML += `<div style="display:flex; gap:8px; margin-top:10px;">`;
+    
     if (isManage) {
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Subtaak</button>`;
-        if (!task.date) {
-            contentHTML += `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">Inplannen</button>`;
-        }
-        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>`;
-    }
-    if (task.completed) {
-        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Herplan</button>`;
-        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>`;
+        // Altijd optie tot (her)plannen in beheer
+        contentHTML += `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">${task.date ? 'Herplannen' : 'Inplannen'}</button>`;
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons" style="font-size:1.2rem">delete</span></button>`;
+    } else if (task.completed) {
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Heractiveren</button>`;
+        contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons" style="font-size:1.2rem">delete</span></button>`;
     }
     
     contentHTML += `</div></div>`;
@@ -136,10 +134,7 @@ function toggleComplete(e, id) {
     const task = tasks.find(x => x.id === id);
     if(task) {
         task.completed = !task.completed;
-        // Cascade: Als hoofdtaak afgevinkt wordt, vink alle subtaken mee
-        if (task.subtasks) {
-            setAllSubtasks(task.subtasks, task.completed);
-        }
+        if (task.subtasks) setAllSubtasks(task.subtasks, task.completed);
         saveAndRender();
     }
 }
@@ -153,27 +148,18 @@ function setAllSubtasks(subList, status) {
 
 function toggleSubComplete(e, subId) {
     e.stopPropagation();
-    // 1. Zoek de subtaak en wissel status
     const sub = findTaskById(tasks, subId);
     if(!sub) return;
     sub.completed = !sub.completed;
-
-    // 2. Cascade naar beneden (sub-sub-taken)
     if (sub.subtasks) setAllSubtasks(sub.subtasks, sub.completed);
-
-    // 3. Check naar boven (moet de ouder nu ook voltooid zijn?)
     checkParentStatus(tasks);
-    
     saveAndRender();
 }
 
 function checkParentStatus(list) {
     list.forEach(parent => {
         if (parent.subtasks && parent.subtasks.length > 0) {
-            // Check eerst de kinderen van deze parent (recursief)
             checkParentStatus(parent.subtasks);
-            
-            // Als alle kinderen voltooid zijn, vink parent aan. Anders uit.
             const allDone = parent.subtasks.every(s => s.completed);
             parent.completed = allDone;
         }
@@ -226,7 +212,7 @@ function closePlanningModal() { document.getElementById('planning-modal').style.
 function confirmPlan() {
     const t = tasks.find(x => x.id === document.getElementById('plan-task-id').value);
     const d = document.getElementById('plan-date').value;
-    if(t && d) { t.date = d; closePlanningModal(); saveAndRender(); showView('planning'); }
+    if(t && d) { t.date = d; t.completed = false; closePlanningModal(); saveAndRender(); showView('planning'); }
 }
 
 function addSubTaskPrompt(parentId) {
@@ -236,22 +222,57 @@ function addSubTaskPrompt(parentId) {
 }
 
 function deleteTask(id) { if(confirm("Taak definitief verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
-function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; t.date = null; saveAndRender(); showView('manage'); }
+function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; saveAndRender(); }
+
 function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
 
+// --- CATEGORIES RENDER ---
 function renderCategoryList() {
-    document.getElementById('category-edit-list').innerHTML = categories.map(c => `
-        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; align-items:center;">
-            <div style="display:flex; align-items:center; gap:10px"><div style="width:15px; height:15px; border-radius:50%; background:${c.color}"></div>${c.title}</div>
-            <button class="icon-btn" style="color:red" onclick="deleteCategory('${c.id}')"><span class="material-icons">delete</span></button>
+    const container = document.getElementById('category-edit-list');
+    container.innerHTML = `
+        <div class="category-card">
+            <h3 style="margin-top:0">Beheer Categorieën</h3>
+            <div id="cat-list-items">
+                ${categories.map(c => `
+                    <div class="category-item">
+                        <div style="display:flex; align-items:center; gap:12px">
+                            <div style="width:20px; height:20px; border-radius:50%; background:${c.color}; box-shadow:0 2px 4px rgba(0,0,0,0.1)"></div>
+                            <span style="font-weight:500">${c.title}</span>
+                        </div>
+                        <button class="icon-btn" style="color:#ff7675" onclick="deleteCategory('${c.id}')">
+                            <span class="material-icons">delete_outline</span>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="cat-input-group">
+                <input type="text" id="new-cat-title" placeholder="Nieuwe categorie...">
+                <div class="color-picker-wrapper">
+                    <input type="color" id="new-cat-color" value="#4A90E2">
+                </div>
+                <button class="btn-icon-round" onclick="addCategory()">
+                    <span class="material-icons">add</span>
+                </button>
+            </div>
         </div>
-    `).join('');
+    `;
 }
+
 function addCategory() {
     const t = document.getElementById('new-cat-title').value;
     const c = document.getElementById('new-cat-color').value;
-    if(t) { categories.push({ id: 'c-'+Date.now(), title: t, color: c }); document.getElementById('new-cat-title').value = ''; saveAndRender(); }
+    if(t) { categories.push({ id: 'c-'+Date.now(), title: t, color: c }); saveAndRender(); }
 }
-function deleteCategory(id) { if(categories.length > 1) { categories = categories.filter(x => x.id !== id); saveAndRender(); } }
+
+function deleteCategory(id) { 
+    if(categories.length > 1) { 
+        if(confirm("Categorie verwijderen? Taken in deze categorie blijven bestaan.")) {
+            categories = categories.filter(x => x.id !== id); 
+            saveAndRender(); 
+        }
+    } else {
+        alert("Je moet minimaal één categorie behouden.");
+    }
+}
 
 window.onload = () => showView('planning');
