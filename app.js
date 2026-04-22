@@ -35,20 +35,16 @@ function renderPlanning() {
     const list = document.getElementById('task-list');
     const sortVal = document.getElementById('sort-select').value;
     list.innerHTML = '';
-    
     let planned = tasks.filter(t => t.date && !t.completed);
-
     if (sortVal === 'alpha') planned.sort((a,b) => a.title.localeCompare(b.title));
     else if (sortVal === 'cat') planned.sort((a,b) => a.categoryId.localeCompare(b.categoryId));
     else planned.sort((a,b) => new Date(a.date) - new Date(b.date));
-
     planned.forEach(t => list.appendChild(createTaskCard(t, 'planning')));
 }
 
 function renderManage() {
     const list = document.getElementById('manage-all-list');
-    list.innerHTML = '<h2 style="font-size:1rem; color:var(--grey); margin-bottom:15px;">Alle taken (Backlog)</h2>';
-    // HIER: Geen filter meer op 'completed', zodat alles zichtbaar blijft
+    list.innerHTML = '<h2 style="font-size:1rem; color:var(--grey); margin-bottom:15px;">Mijn Backlog</h2>';
     const all = [...tasks].sort((a,b) => b.id.localeCompare(a.id));
     all.forEach(t => list.appendChild(createTaskCard(t, 'manage')));
 }
@@ -76,7 +72,8 @@ function createTaskCard(task, context) {
                 <span class="${task.completed ? 'completed' : ''}">${task.title}</span>
             </div>`;
     } else {
-        headerHTML += `<strong class="${task.completed ? 'completed' : ''}">${task.title}</strong>`;
+        // In Takenbeheer: Nooit een vinkje en nooit doorstreept
+        headerHTML += `<strong>${task.title}</strong>`;
     }
     
     headerHTML += `
@@ -98,7 +95,6 @@ function createTaskCard(task, context) {
     
     if (isManage) {
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Subtaak</button>`;
-        // Altijd optie tot (her)plannen in beheer
         contentHTML += `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">${task.date ? 'Herplannen' : 'Inplannen'}</button>`;
         contentHTML += `<button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')"><span class="material-icons" style="font-size:1.2rem">delete</span></button>`;
     } else if (task.completed) {
@@ -120,7 +116,7 @@ function renderSubtasks(subtasks, parentId, context) {
         <li class="subtask-item">
             <div class="check-container">
                 ${isPlanning ? `<input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubComplete(event, '${st.id}')">` : ''}
-                <span class="${st.completed ? 'completed' : ''}">${st.title}</span>
+                <span class="${(isPlanning && st.completed) ? 'completed' : ''}">${st.title}</span>
             </div>
             ${isManage ? `<button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')"><span class="material-icons" style="font-size:1.1rem">add_circle</span></button>` : ''}
         </li>
@@ -223,21 +219,20 @@ function addSubTaskPrompt(parentId) {
 
 function deleteTask(id) { if(confirm("Taak definitief verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
 function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; saveAndRender(); }
-
 function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
 
-// --- CATEGORIES RENDER ---
+// --- CATEGORIES RENDER (CLEAN) ---
 function renderCategoryList() {
     const container = document.getElementById('category-edit-list');
     container.innerHTML = `
         <div class="category-card">
             <h3 style="margin-top:0">Beheer Categorieën</h3>
-            <div id="cat-list-items">
+            <div id="cat-items">
                 ${categories.map(c => `
                     <div class="category-item">
                         <div style="display:flex; align-items:center; gap:12px">
-                            <div style="width:20px; height:20px; border-radius:50%; background:${c.color}; box-shadow:0 2px 4px rgba(0,0,0,0.1)"></div>
-                            <span style="font-weight:500">${c.title}</span>
+                            <div style="width:18px; height:18px; border-radius:50%; background:${c.color}"></div>
+                            <span>${c.title}</span>
                         </div>
                         <button class="icon-btn" style="color:#ff7675" onclick="deleteCategory('${c.id}')">
                             <span class="material-icons">delete_outline</span>
@@ -245,8 +240,8 @@ function renderCategoryList() {
                     </div>
                 `).join('')}
             </div>
-            <div class="cat-input-group">
-                <input type="text" id="new-cat-title" placeholder="Nieuwe categorie...">
+            <div class="cat-input-area">
+                <input type="text" id="new-cat-title" placeholder="Naam...">
                 <div class="color-picker-wrapper">
                     <input type="color" id="new-cat-color" value="#4A90E2">
                 </div>
@@ -266,12 +261,8 @@ function addCategory() {
 
 function deleteCategory(id) { 
     if(categories.length > 1) { 
-        if(confirm("Categorie verwijderen? Taken in deze categorie blijven bestaan.")) {
-            categories = categories.filter(x => x.id !== id); 
-            saveAndRender(); 
-        }
-    } else {
-        alert("Je moet minimaal één categorie behouden.");
+        categories = categories.filter(x => x.id !== id); 
+        saveAndRender(); 
     }
 }
 

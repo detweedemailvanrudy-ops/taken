@@ -51,6 +51,11 @@ header {
 .task-content { display: none; padding: 0 16px 16px 16px; border-top: 1px solid #f8f9fa; }
 .task-card.expanded .task-content { display: block; }
 
+/* Categorie Management */
+.category-card { background: white; border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+.category-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f3f5; }
+.cat-input-area { margin-top: 20px; display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 12px; }
+
 /* Buttons & FAB */
 .btn { padding: 12px; border-radius: 12px; border: none; font-weight: 600; width: 100%; cursor: pointer; margin-top: 10px; }
 .btn-primary { background: var(--primary); color: white; }
@@ -63,14 +68,14 @@ header {
 }
 
 /* Utils */
-.completed { text-decoration: line-through; color: var(--grey); }
+.completed { text-decoration: line-through; color: var(--grey); opacity: 0.7; }
 .check-container { display: flex; align-items: center; gap: 10px; flex: 1; }
-input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
+input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; }
 .sort-bar { background: #fff; padding: 10px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; box-shadow: var(--shadow); }
 
 .subtask-list { list-style: none; padding-left: 15px; border-left: 2px solid #f1f3f5; margin: 10px 0; }
 .subtask-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.95rem; }
 
-.color-picker-wrapper { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; flex-shrink: 0; }
-input[type="color"] { width: 60px; height: 60px; transform: translate(-10px, -10px); cursor: pointer; }
-.btn-icon-round { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.color-picker-wrapper { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; flex-shrink: 0; position: relative; }
+input[type="color"] { position: absolute; top: -10px; left: -10px; width: 60px; height: 60px; cursor: pointer; border: none; }
+.btn-icon-round { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
