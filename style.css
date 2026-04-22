@@ -9,25 +9,13 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    margin: 0; padding: 0;
-}
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
 
 header {
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky; top: 0; z-index: 100;
-    height: 65px;
+    background: var(--primary); color: white; padding: 10px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 100; height: 65px;
 }
-
-header h1 { font-size: 1.1rem; margin: 0; }
 
 /* Sidebar */
 .sidebar {
@@ -45,46 +33,40 @@ header h1 { font-size: 1.1rem; margin: 0; }
 .sidebar-nav button {
     display: flex; align-items: center; gap: 15px; width: 100%;
     padding: 15px; background: none; border: none; font-size: 1rem;
-    text-align: left; border-radius: 12px; margin-bottom: 5px;
+    text-align: left; border-radius: 12px; margin-bottom: 5px; cursor: pointer;
 }
-.sidebar-nav button:active { background: #f1f3f5; }
 
-/* Views & Cards */
-.app-view { padding: 15px; animation: slideIn 0.3s ease; }
-@keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-.task-card {
-    background: var(--card); border-radius: 16px; margin-bottom: 12px;
-    box-shadow: var(--shadow); transition: 0.2s;
+/* Modals */
+.modal {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 2000;
+    justify-content: center; align-items: center; backdrop-filter: blur(4px);
 }
-.task-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+.modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
+
+/* Taken & Kaarten */
+.task-card { background: var(--card); border-radius: 16px; margin-bottom: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.task-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .task-content { display: none; padding: 0 16px 16px 16px; border-top: 1px solid #f8f9fa; }
 .task-card.expanded .task-content { display: block; }
 
 /* Buttons & FAB */
-.btn {
-    padding: 12px; border-radius: 12px; border: none; font-weight: 600; width: 100%; cursor: pointer;
-}
+.btn { padding: 12px; border-radius: 12px; border: none; font-weight: 600; width: 100%; cursor: pointer; margin-top: 10px; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-secondary { background: #eee; color: #555; }
-.btn-small { width: auto; padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
-
 .fab {
     position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
     border-radius: 50%; background: var(--primary); color: white;
-    border: none; box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3);
+    border: none; box-shadow: 0 10px 20px rgba(74, 144, 226, 0.4);
     display: flex; align-items: center; justify-content: center; z-index: 90;
 }
 
-/* UI Elements */
-input, select { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
-.sort-bar { padding: 0 5px 15px 5px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
-.sort-select { flex: 1; }
-.check-container { display: flex; align-items: center; gap: 10px; }
+/* Utils */
 .completed { text-decoration: line-through; color: var(--grey); }
-
-.subtask-list { list-style: none; padding-left: 15px; border-left: 2px solid #f1f3f5; margin: 10px 0; }
-.subtask-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; }
-
-.color-picker-wrapper { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.check-container { display: flex; align-items: center; gap: 10px; }
+input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; }
+.cat-input-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.color-picker-wrapper { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; flex-shrink: 0; }
 input[type="color"] { width: 60px; height: 60px; transform: translate(-10px, -10px); cursor: pointer; }
+.btn-icon-round { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }

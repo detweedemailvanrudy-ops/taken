@@ -16,7 +16,7 @@ function showView(viewId) {
 
 function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
 
-// --- DATA ---
+// --- DATA & RENDER ---
 function saveAndRender() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     localStorage.setItem('categories', JSON.stringify(categories));
@@ -25,17 +25,15 @@ function saveAndRender() {
 
 function renderAll() {
     const activeView = Array.from(document.querySelectorAll('.app-view')).find(v => v.style.display !== 'none')?.id;
-
     if (activeView === 'view-planning') renderPlanning();
     if (activeView === 'view-manage') renderManage();
     if (activeView === 'view-completed') renderCompleted();
-    if (activeView === 'view-categories') renderCategories();
+    if (activeView === 'view-categories') renderCategoryList();
 }
 
-// --- VIEWS ---
 function renderPlanning() {
     const list = document.getElementById('task-list');
-    list.innerHTML = '<h2>Ingepland</h2>';
+    list.innerHTML = '<h2>Vandaag / Binnenkort</h2>';
     const planned = tasks.filter(t => t.date && !t.completed).sort((a,b) => new Date(a.date) - new Date(b.date));
     planned.forEach(t => list.appendChild(createTaskCard(t, 'planning')));
 }
@@ -44,7 +42,6 @@ function renderManage() {
     const list = document.getElementById('manage-all-list');
     const sortVal = document.getElementById('sort-select').value;
     list.innerHTML = '';
-
     let filtered = tasks.filter(t => !t.completed);
 
     if (sortVal === 'alpha') filtered.sort((a,b) => a.title.localeCompare(b.title));
@@ -66,8 +63,6 @@ function createTaskCard(task, context) {
     div.className = `task-card ${task.expanded ? 'expanded' : ''}`;
     div.style.borderLeft = `6px solid ${cat.color}`;
     
-    const isManage = context === 'manage';
-    
     div.innerHTML = `
         <div class="task-header" onclick="toggleExpand('${task.id}')">
             <div class="check-container">
@@ -75,7 +70,7 @@ function createTaskCard(task, context) {
                 <span class="${task.completed ? 'completed' : ''}">${task.title}</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-                ${isManage ? `<button class="icon-btn" style="color:var(--primary)" onclick="event.stopPropagation(); openEditTaskModal('${task.id}')"><span class="material-icons">edit</span></button>` : ''}
+                ${context === 'manage' ? `<button class="icon-btn" style="color:var(--primary)" onclick="event.stopPropagation(); openEditTaskModal('${task.id}')"><span class="material-icons">edit</span></button>` : ''}
                 <span class="material-icons" style="color:#ccc">${task.expanded ? 'expand_more' : 'chevron_right'}</span>
             </div>
         </div>
@@ -86,10 +81,10 @@ function createTaskCard(task, context) {
             </div>
             <div class="subtasks-container">${renderSubtasks(task.subtasks, task.id)}</div>
             <div style="display:flex; gap:8px; margin-top:10px;">
-                <button class="btn btn-secondary btn-small" onclick="addSubTaskPrompt('${task.id}')"><span class="material-icons">add</span> Sub</button>
-                ${!task.date && !task.completed ? `<button class="btn btn-primary btn-small" onclick="openPlanningModal('${task.id}')">Plannen</button>` : ''}
-                ${task.completed ? `<button class="btn btn-secondary btn-small" onclick="rePlan('${task.id}')">Herplan</button>` : ''}
-                <button class="btn btn-secondary btn-small" style="color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>
+                <button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="addSubTaskPrompt('${task.id}')">+ Sub</button>
+                ${!task.date && !task.completed ? `<button class="btn btn-primary" style="width:auto; padding:6px 12px;" onclick="openPlanningModal('${task.id}')">Inplannen</button>` : ''}
+                ${task.completed ? `<button class="btn btn-secondary" style="width:auto; padding:6px 12px;" onclick="rePlan('${task.id}')">Hergebruik</button>` : ''}
+                <button class="btn btn-secondary" style="width:auto; padding:6px 12px; color:red" onclick="deleteTask('${task.id}')">Wis</button>
             </div>
         </div>
     `;
@@ -98,19 +93,19 @@ function createTaskCard(task, context) {
 
 function renderSubtasks(subtasks, parentId) {
     if (!subtasks || subtasks.length === 0) return '';
-    return `<ul class="subtask-list">` + subtasks.map(st => `
-        <li class="subtask-item">
+    return `<ul style="list-style:none; padding-left:15px; border-left:2px solid #eee; margin:10px 0;">` + subtasks.map(st => `
+        <li style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <div class="check-container">
                 <input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubComplete(event, '${st.id}')">
                 <span class="${st.completed ? 'completed' : ''}">${st.title}</span>
             </div>
-            <button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')"><span class="material-icons" style="font-size:1.1rem">add_circle_outline</span></button>
+            <button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')"><span class="material-icons" style="font-size:1.1rem">add_circle</span></button>
         </li>
         ${renderSubtasks(st.subtasks, st.id)}
     `).join('') + `</ul>`;
 }
 
-// --- ACTIONS ---
+// --- ACTIES ---
 function findTaskById(list, id) {
     for (let t of list) {
         if (t.id === id) return t;
@@ -151,29 +146,37 @@ function handleSaveTask() {
     closeModal(); saveAndRender();
 }
 
-function addSubTaskPrompt(parentId) {
-    const title = prompt("Naam subtaak:");
-    const p = findTaskById(tasks, parentId);
-    if(p && title) { p.subtasks.push({ id: 'st-'+Date.now(), title, completed: false, subtasks: [] }); p.expanded = true; saveAndRender(); }
-}
+function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
 
-function openPlanningModal(id) { document.getElementById('plan-task-id').value = id; document.getElementById('planning-modal').style.display = 'flex'; }
+function openPlanningModal(id) { 
+    document.getElementById('plan-task-id').value = id; 
+    document.getElementById('planning-modal').style.display = 'flex'; 
+}
+function closePlanningModal() { document.getElementById('planning-modal').style.display = 'none'; }
+
 function confirmPlan() {
     const t = tasks.find(x => x.id === document.getElementById('plan-task-id').value);
     const d = document.getElementById('plan-date').value;
     if(t && d) { t.date = d; closePlanningModal(); saveAndRender(); showView('planning'); }
 }
 
-function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; t.date = null; saveAndRender(); showView('manage'); }
-function deleteTask(id) { if(confirm("Verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
-function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
-function closePlanningModal() { document.getElementById('planning-modal').style.display = 'none'; }
-function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
+function addSubTaskPrompt(parentId) {
+    const title = prompt("Naam subtaak:");
+    const p = findTaskById(tasks, parentId);
+    if(p && title) { p.subtasks.push({ id: 'st-'+Date.now(), title, completed: false, subtasks: [] }); p.expanded = true; saveAndRender(); }
+}
 
-// --- CATEGORIES ---
-function renderCategories() {
+function deleteTask(id) { if(confirm("Taak verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
+function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; t.date = null; saveAndRender(); showView('manage'); }
+
+function populateCatSelect() { 
+    document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); 
+}
+
+// --- CATEGORIEËN ---
+function renderCategoryList() {
     document.getElementById('category-edit-list').innerHTML = categories.map(c => `
-        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee">
+        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; align-items:center;">
             <div style="display:flex; align-items:center; gap:10px"><div style="width:15px; height:15px; border-radius:50%; background:${c.color}"></div>${c.title}</div>
             <button class="icon-btn" style="color:red" onclick="deleteCategory('${c.id}')"><span class="material-icons">delete</span></button>
         </div>
