@@ -6,70 +6,75 @@
     <title>TaskMaster Pro</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <meta name="theme-color" content="#4A90E2">
 </head>
 <body>
     <div id="side-menu" class="sidebar">
         <div class="sidebar-header">
-            <h3>Instellingen</h3>
-            <button onclick="toggleMenu()">×</button>
+            <h3>Menu</h3>
+            <button class="icon-btn" onclick="toggleMenu()"><span class="material-icons">close</span></button>
         </div>
-        <div class="sidebar-content">
-            <h4>Categorie Beheer</h4>
-            <div class="cat-input-group">
-                <input type="text" id="new-cat-title" placeholder="Naam...">
-                <div class="color-picker-wrapper">
-                    <input type="color" id="new-cat-color" value="#4A90E2">
-                </div>
-                <button onclick="addCategory()">+</button>
-            </div>
-            <div id="category-edit-list"></div>
-        </div>
+        <nav class="sidebar-nav">
+            <button onclick="showView('planning')"><span class="material-icons">event_note</span> Planning</button>
+            <button onclick="showView('add-task')"><span class="material-icons">add_task</span> Nieuwe Taak</button>
+            <button onclick="showView('categories')"><span class="material-icons">category</span> Categorieën</button>
+            <button onclick="showView('completed')"><span class="material-icons">task_alt</span> Voltooid</button>
+        </nav>
     </div>
+    <div class="sidebar-overlay" onclick="toggleMenu()"></div>
 
     <header>
-        <button id="menu-btn" onclick="toggleMenu()">☰</button>
-        <h1>TaskMaster Pro</h1>
-        <button id="add-task-btn">+</button>
-    </header>
+        <button class="icon-btn" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
+        <h1 id="view-title">Planning</h1>
+        <div></div> </header>
 
     <main id="app">
-        <section id="task-section">
-            <h2>Planning</h2>
+        <section id="view-planning" class="app-view">
             <div id="task-list"></div>
-        </section>
-
-        <section id="backlog-section">
-            <h2>Backlog</h2>
+            <hr>
+            <h3>Backlog (Ongepland)</h3>
             <div id="backlog-list"></div>
         </section>
 
-        <section id="completed-section">
-            <h2>Voltooid</h2>
+        <section id="view-add-task" class="app-view" style="display:none;">
+            <div class="card add-form">
+                <input type="text" id="task-title" placeholder="Wat moet er gebeuren?">
+                <select id="task-category"></select>
+                <button class="btn btn-primary" onclick="saveTask()">
+                    <span class="material-icons">save</span> Taak Opslaan
+                </button>
+            </div>
+        </section>
+
+        <section id="view-categories" class="app-view" style="display:none;">
+            <div class="card">
+                <div class="cat-input-group">
+                    <input type="text" id="new-cat-title" placeholder="Naam...">
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="new-cat-color" value="#4A90E2">
+                    </div>
+                    <button class="btn-icon-round" onclick="addCategory()">
+                        <span class="material-icons">add</span>
+                    </button>
+                </div>
+                <div id="category-edit-list"></div>
+            </div>
+        </section>
+
+        <section id="view-completed" class="app-view" style="display:none;">
             <div id="completed-list"></div>
         </section>
     </main>
 
-    <div id="task-modal" class="modal">
-        <div class="modal-content">
-            <h3>Nieuwe Taak</h3>
-            <input type="text" id="task-title" placeholder="Wat moet er gebeuren?">
-            <select id="task-category"></select>
-            <div class="modal-actions">
-                <button class="btn-primary" onclick="saveTask()">Opslaan</button>
-                <button class="btn-secondary" onclick="closeModal()">Annuleren</button>
-            </div>
-        </div>
-    </div>
-
     <div id="planning-modal" class="modal">
         <div class="modal-content">
-            <h3>Datum kiezen</h3>
+            <h3>Wanneer inplannen?</h3>
             <input type="datetime-local" id="plan-date">
             <input type="hidden" id="plan-task-id">
             <div class="modal-actions">
-                <button class="btn-primary" onclick="confirmPlan()">Bevestigen</button>
-                <button class="btn-secondary" onclick="closePlanningModal()">Annuleren</button>
+                <button class="btn btn-primary" onclick="confirmPlan()">Opslaan</button>
+                <button class="btn btn-secondary" onclick="closePlanningModal()">Annuleren</button>
             </div>
         </div>
     </div>
