@@ -1,42 +1,22 @@
-// --- DATA INITIALISATIE ---
 let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 let categories = JSON.parse(localStorage.getItem('categories')) || [
-    { id: 'c1', title: 'Werk', color: '#4A90E2' },
-    { id: 'c2', title: 'Privé', color: '#50C878' }
+    { id: 'c1', title: 'Algemeen', color: '#4A90E2' }
 ];
 
-// --- NAVIGATIE & VIEW CONTROLLER ---
+// --- NAVIGATIE ---
 function showView(viewId) {
-    // Verberg alle views
     document.querySelectorAll('.app-view').forEach(v => v.style.display = 'none');
-    
-    // Toon gekozen view
     document.getElementById('view-' + viewId).style.display = 'block';
     
-    // Update Header Titel
-    const titles = {
-        'planning': 'Mijn Planning',
-        'add-task': 'Nieuwe Taak maken',
-        'categories': 'Categorie Beheer',
-        'completed': 'Voltooide Taken'
-    };
-    document.getElementById('view-title').innerText = titles[viewId] || 'TaskMaster';
-
-    // Menu sluiten indien open
-    const menu = document.getElementById('side-menu');
-    if (menu.classList.contains('open')) toggleMenu();
-
-    // Specifieke view logica
-    if(viewId === 'add-task') populateCategorySelect();
-    
+    const titles = { 'planning': 'Mijn Planning', 'manage': 'Takenbeheer', 'categories': 'Categorieën', 'completed': 'Voltooid' };
+    document.getElementById('view-title').innerText = titles[viewId];
+    if (document.getElementById('side-menu').classList.contains('open')) toggleMenu();
     renderAll();
 }
 
-function toggleMenu() {
-    document.getElementById('side-menu').classList.toggle('open');
-}
+function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); }
 
-// --- OPSLAG & RENDERING ---
+// --- DATA ---
 function saveAndRender() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     localStorage.setItem('categories', JSON.stringify(categories));
@@ -44,36 +24,49 @@ function saveAndRender() {
 }
 
 function renderAll() {
-    const plannedList = document.getElementById('task-list');
-    const backlogList = document.getElementById('backlog-list');
-    const completedList = document.getElementById('completed-list');
-    const catEditList = document.getElementById('category-edit-list');
+    const activeView = Array.from(document.querySelectorAll('.app-view')).find(v => v.style.display !== 'none')?.id;
 
-    if (plannedList) plannedList.innerHTML = '';
-    if (backlogList) backlogList.innerHTML = '';
-    if (completedList) completedList.innerHTML = '';
-    if (catEditList) catEditList.innerHTML = '';
-
-    tasks.forEach(task => {
-        const cat = categories.find(c => c.id === task.categoryId) || categories[0];
-        const card = createTaskCard(task, cat);
-
-        if (task.completed) {
-            if (completedList) completedList.appendChild(card);
-        } else if (task.date) {
-            if (plannedList) plannedList.appendChild(card);
-        } else {
-            if (backlogList) backlogList.appendChild(card);
-        }
-    });
-
-    if (catEditList) renderCategoryManager(catEditList);
+    if (activeView === 'view-planning') renderPlanning();
+    if (activeView === 'view-manage') renderManage();
+    if (activeView === 'view-completed') renderCompleted();
+    if (activeView === 'view-categories') renderCategories();
 }
 
-function createTaskCard(task, cat) {
+// --- VIEWS ---
+function renderPlanning() {
+    const list = document.getElementById('task-list');
+    list.innerHTML = '<h2>Ingepland</h2>';
+    const planned = tasks.filter(t => t.date && !t.completed).sort((a,b) => new Date(a.date) - new Date(b.date));
+    planned.forEach(t => list.appendChild(createTaskCard(t, 'planning')));
+}
+
+function renderManage() {
+    const list = document.getElementById('manage-all-list');
+    const sortVal = document.getElementById('sort-select').value;
+    list.innerHTML = '';
+
+    let filtered = tasks.filter(t => !t.completed);
+
+    if (sortVal === 'alpha') filtered.sort((a,b) => a.title.localeCompare(b.title));
+    else if (sortVal === 'cat') filtered.sort((a,b) => a.categoryId.localeCompare(b.categoryId));
+    else filtered.sort((a,b) => b.id.localeCompare(a.id));
+
+    filtered.forEach(t => list.appendChild(createTaskCard(t, 'manage')));
+}
+
+function renderCompleted() {
+    const list = document.getElementById('completed-list');
+    list.innerHTML = '<h2>Geschiedenis</h2>';
+    tasks.filter(t => t.completed).forEach(t => list.appendChild(createTaskCard(t, 'completed')));
+}
+
+function createTaskCard(task, context) {
+    const cat = categories.find(c => c.id === task.categoryId) || categories[0];
     const div = document.createElement('div');
     div.className = `task-card ${task.expanded ? 'expanded' : ''}`;
     div.style.borderLeft = `6px solid ${cat.color}`;
+    
+    const isManage = context === 'manage';
     
     div.innerHTML = `
         <div class="task-header" onclick="toggleExpand('${task.id}')">
@@ -81,27 +74,22 @@ function createTaskCard(task, cat) {
                 <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleComplete(event, '${task.id}')">
                 <span class="${task.completed ? 'completed' : ''}">${task.title}</span>
             </div>
-            <span class="material-icons" style="color:#ccc">${task.expanded ? 'expand_more' : 'chevron_right'}</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                ${isManage ? `<button class="icon-btn" style="color:var(--primary)" onclick="event.stopPropagation(); openEditTaskModal('${task.id}')"><span class="material-icons">edit</span></button>` : ''}
+                <span class="material-icons" style="color:#ccc">${task.expanded ? 'expand_more' : 'chevron_right'}</span>
+            </div>
         </div>
         <div class="task-content">
             <div style="font-size:0.8rem; color:#888; margin-bottom:10px;">
-                <span class="material-icons" style="font-size:0.9rem; vertical-align:middle">category</span> ${cat.title}
-                ${task.date ? ` | <span class="material-icons" style="font-size:0.9rem; vertical-align:middle">schedule</span> ` + new Date(task.date).toLocaleString('nl-NL') : ''}
+                <span class="material-icons" style="font-size:0.9rem">category</span> ${cat.title}
+                ${task.date ? ` | <span class="material-icons" style="font-size:0.9rem">schedule</span> ` + new Date(task.date).toLocaleString('nl-NL') : ''}
             </div>
             <div class="subtasks-container">${renderSubtasks(task.subtasks, task.id)}</div>
-            
-            <div style="display:flex; gap:8px; margin-top:15px;">
-                <button class="btn btn-secondary btn-small" onclick="addSubTaskPrompt('${task.id}')">
-                    <span class="material-icons" style="font-size:1rem">add</span> Sub
-                </button>
-                ${!task.date && !task.completed ? `
-                    <button class="btn btn-primary btn-small" onclick="openPlanningModal('${task.id}')">
-                        <span class="material-icons" style="font-size:1rem">event</span> Inplannen
-                    </button>` : ''}
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button class="btn btn-secondary btn-small" onclick="addSubTaskPrompt('${task.id}')"><span class="material-icons">add</span> Sub</button>
+                ${!task.date && !task.completed ? `<button class="btn btn-primary btn-small" onclick="openPlanningModal('${task.id}')">Plannen</button>` : ''}
                 ${task.completed ? `<button class="btn btn-secondary btn-small" onclick="rePlan('${task.id}')">Herplan</button>` : ''}
-                <button class="btn btn-secondary btn-small" style="color:red" onclick="deleteTask('${task.id}')">
-                    <span class="material-icons" style="font-size:1rem">delete</span>
-                </button>
+                <button class="btn btn-secondary btn-small" style="color:red" onclick="deleteTask('${task.id}')"><span class="material-icons">delete</span></button>
             </div>
         </div>
     `;
@@ -116,141 +104,86 @@ function renderSubtasks(subtasks, parentId) {
                 <input type="checkbox" ${st.completed ? 'checked' : ''} onclick="toggleSubComplete(event, '${st.id}')">
                 <span class="${st.completed ? 'completed' : ''}">${st.title}</span>
             </div>
-            <button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')">
-                <span class="material-icons" style="font-size:1.2rem">add_circle_outline</span>
-            </button>
+            <button class="icon-btn" style="color:var(--primary)" onclick="addSubTaskPrompt('${st.id}')"><span class="material-icons" style="font-size:1.1rem">add_circle_outline</span></button>
         </li>
         ${renderSubtasks(st.subtasks, st.id)}
     `).join('') + `</ul>`;
 }
 
-// --- LOGICA FUNCTIES ---
-function toggleExpand(id) {
-    const task = findTaskById(tasks, id);
-    if(task) { task.expanded = !task.expanded; saveAndRender(); }
-}
-
-function toggleComplete(event, id) {
-    event.stopPropagation();
-    const task = tasks.find(t => t.id === id);
-    if(task) { task.completed = !task.completed; saveAndRender(); }
-}
-
-function toggleSubComplete(event, subId) {
-    event.stopPropagation();
-    const sub = findTaskById(tasks, subId);
-    if(sub) { sub.completed = !sub.completed; saveAndRender(); }
-}
-
+// --- ACTIONS ---
 function findTaskById(list, id) {
     for (let t of list) {
         if (t.id === id) return t;
-        if (t.subtasks) {
-            let found = findTaskById(t.subtasks, id);
-            if (found) return found;
-        }
+        if (t.subtasks) { let found = findTaskById(t.subtasks, id); if (found) return found; }
     }
     return null;
 }
 
-function saveTask() {
-    const title = document.getElementById('task-title').value;
-    const catId = document.getElementById('task-category').value;
-    if(!title) return alert("Vul een titel in");
+function toggleExpand(id) { const t = findTaskById(tasks, id); if(t) { t.expanded = !t.expanded; saveAndRender(); } }
+function toggleComplete(e, id) { e.stopPropagation(); const t = tasks.find(x => x.id === id); if(t) { t.completed = !t.completed; saveAndRender(); } }
+function toggleSubComplete(e, id) { e.stopPropagation(); const s = findTaskById(tasks, id); if(s) { s.completed = !s.completed; saveAndRender(); } }
 
-    tasks.push({
-        id: 't-' + Date.now(),
-        title,
-        categoryId: catId,
-        date: null,
-        completed: false,
-        expanded: false,
-        subtasks: []
-    });
+function openNewTaskModal() {
+    document.getElementById('modal-task-title').innerText = "Nieuwe Taak";
+    document.getElementById('edit-task-id').value = "";
+    document.getElementById('task-title-input').value = "";
+    populateCatSelect();
+    document.getElementById('task-modal').style.display = 'flex';
+}
 
-    document.getElementById('task-title').value = '';
-    saveAndRender();
-    showView('planning');
+function openEditTaskModal(id) {
+    const t = findTaskById(tasks, id);
+    document.getElementById('modal-task-title').innerText = "Bewerken";
+    document.getElementById('edit-task-id').value = t.id;
+    document.getElementById('task-title-input').value = t.title;
+    populateCatSelect();
+    document.getElementById('task-category-select').value = t.categoryId;
+    document.getElementById('task-modal').style.display = 'flex';
+}
+
+function handleSaveTask() {
+    const id = document.getElementById('edit-task-id').value;
+    const title = document.getElementById('task-title-input').value;
+    const cat = document.getElementById('task-category-select').value;
+    if(!title) return;
+    if(id) { const t = findTaskById(tasks, id); t.title = title; t.categoryId = cat; }
+    else { tasks.push({ id: 't-'+Date.now(), title, categoryId: cat, date: null, completed: false, expanded: false, subtasks: [] }); }
+    closeModal(); saveAndRender();
 }
 
 function addSubTaskPrompt(parentId) {
     const title = prompt("Naam subtaak:");
-    if (!title) return;
-    const parent = findTaskById(tasks, parentId);
-    if (parent) {
-        parent.subtasks.push({ id: 'st-' + Date.now(), title, completed: false, subtasks: [] });
-        parent.expanded = true;
-        saveAndRender();
-    }
+    const p = findTaskById(tasks, parentId);
+    if(p && title) { p.subtasks.push({ id: 'st-'+Date.now(), title, completed: false, subtasks: [] }); p.expanded = true; saveAndRender(); }
 }
 
-function rePlan(id) {
-    const task = tasks.find(t => t.id === id);
-    if(task) { task.completed = false; task.date = null; saveAndRender(); showView('planning'); }
+function openPlanningModal(id) { document.getElementById('plan-task-id').value = id; document.getElementById('planning-modal').style.display = 'flex'; }
+function confirmPlan() {
+    const t = tasks.find(x => x.id === document.getElementById('plan-task-id').value);
+    const d = document.getElementById('plan-date').value;
+    if(t && d) { t.date = d; closePlanningModal(); saveAndRender(); showView('planning'); }
 }
 
-function deleteTask(id) {
-    if(confirm("Zeker weten?")) {
-        tasks = tasks.filter(t => t.id !== id);
-        saveAndRender();
-    }
-}
+function rePlan(id) { const t = tasks.find(x => x.id === id); t.completed = false; t.date = null; saveAndRender(); showView('manage'); }
+function deleteTask(id) { if(confirm("Verwijderen?")) { tasks = tasks.filter(x => x.id !== id); saveAndRender(); } }
+function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
+function closePlanningModal() { document.getElementById('planning-modal').style.display = 'none'; }
+function populateCatSelect() { document.getElementById('task-category-select').innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join(''); }
 
-// --- CATEGORIE BEHEER ---
-function addCategory() {
-    const title = document.getElementById('new-cat-title').value;
-    const color = document.getElementById('new-cat-color').value;
-    if(title) {
-        categories.push({ id: 'c-' + Date.now(), title, color });
-        document.getElementById('new-cat-title').value = '';
-        saveAndRender();
-    }
-}
-
-function renderCategoryManager(container) {
-    container.innerHTML = categories.map(c => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:20px; height:20px; border-radius:50%; background:${c.color}"></div>
-                <span>${c.title}</span>
-            </div>
+// --- CATEGORIES ---
+function renderCategories() {
+    document.getElementById('category-edit-list').innerHTML = categories.map(c => `
+        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee">
+            <div style="display:flex; align-items:center; gap:10px"><div style="width:15px; height:15px; border-radius:50%; background:${c.color}"></div>${c.title}</div>
             <button class="icon-btn" style="color:red" onclick="deleteCategory('${c.id}')"><span class="material-icons">delete</span></button>
         </div>
     `).join('');
 }
-
-function deleteCategory(id) {
-    if(categories.length > 1) {
-        categories = categories.filter(c => c.id !== id);
-        saveAndRender();
-    }
+function addCategory() {
+    const t = document.getElementById('new-cat-title').value;
+    const c = document.getElementById('new-cat-color').value;
+    if(t) { categories.push({ id: 'c-'+Date.now(), title: t, color: c }); document.getElementById('new-cat-title').value = ''; saveAndRender(); }
 }
+function deleteCategory(id) { if(categories.length > 1) { categories = categories.filter(x => x.id !== id); saveAndRender(); } }
 
-function populateCategorySelect() {
-    const select = document.getElementById('task-category');
-    if(select) select.innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-}
-
-// --- PLANNING MODAL ---
-function openPlanningModal(taskId) {
-    document.getElementById('plan-task-id').value = taskId;
-    document.getElementById('planning-modal').style.display = 'flex';
-}
-
-function closePlanningModal() {
-    document.getElementById('planning-modal').style.display = 'none';
-}
-
-function confirmPlan() {
-    const id = document.getElementById('plan-task-id').value;
-    const date = document.getElementById('plan-date').value;
-    const task = tasks.find(t => t.id === id);
-    if(task && date) {
-        task.date = date;
-        closePlanningModal();
-        saveAndRender();
-    }
-}
-
-// --- INIT ---
 window.onload = () => showView('planning');

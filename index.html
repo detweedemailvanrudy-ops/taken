@@ -13,11 +13,11 @@
     <div id="side-menu" class="sidebar">
         <div class="sidebar-header">
             <h3>Menu</h3>
-            <button class="icon-btn" onclick="toggleMenu()"><span class="material-icons">close</span></button>
+            <button class="icon-btn" style="color:var(--text)" onclick="toggleMenu()"><span class="material-icons">close</span></button>
         </div>
         <nav class="sidebar-nav">
             <button onclick="showView('planning')"><span class="material-icons">event_note</span> Planning</button>
-            <button onclick="showView('add-task')"><span class="material-icons">add_task</span> Nieuwe Taak</button>
+            <button onclick="showView('manage')"><span class="material-icons">list_alt</span> Takenbeheer</button>
             <button onclick="showView('categories')"><span class="material-icons">category</span> Categorieën</button>
             <button onclick="showView('completed')"><span class="material-icons">task_alt</span> Voltooid</button>
         </nav>
@@ -27,28 +27,32 @@
     <header>
         <button class="icon-btn" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
         <h1 id="view-title">Planning</h1>
-        <div></div> </header>
+        <div style="width:44px"></div>
+    </header>
 
     <main id="app">
         <section id="view-planning" class="app-view">
             <div id="task-list"></div>
-            <hr>
-            <h3>Backlog (Ongepland)</h3>
-            <div id="backlog-list"></div>
         </section>
 
-        <section id="view-add-task" class="app-view" style="display:none;">
-            <div class="card add-form">
-                <input type="text" id="task-title" placeholder="Wat moet er gebeuren?">
-                <select id="task-category"></select>
-                <button class="btn btn-primary" onclick="saveTask()">
-                    <span class="material-icons">save</span> Taak Opslaan
-                </button>
+        <section id="view-manage" class="app-view" style="display:none;">
+            <div class="sort-bar">
+                <span>Sorteer op:</span>
+                <select id="sort-select" onchange="renderAll()">
+                    <option value="date">Datum (Nieuwste eerst)</option>
+                    <option value="alpha">Alfabetisch</option>
+                    <option value="cat">Categorie</option>
+                </select>
             </div>
+            <div id="manage-all-list"></div>
+            <button class="fab" onclick="openNewTaskModal()">
+                <span class="material-icons">add</span>
+            </button>
         </section>
 
         <section id="view-categories" class="app-view" style="display:none;">
             <div class="card">
+                <h3>Nieuwe Categorie</h3>
                 <div class="cat-input-group">
                     <input type="text" id="new-cat-title" placeholder="Naam...">
                     <div class="color-picker-wrapper">
@@ -67,14 +71,27 @@
         </section>
     </main>
 
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-task-title">Nieuwe Taak</h3>
+            <input type="hidden" id="edit-task-id">
+            <input type="text" id="task-title-input" placeholder="Wat gaan we doen?">
+            <select id="task-category-select"></select>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="handleSaveTask()">Opslaan</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Annuleren</button>
+            </div>
+        </div>
+    </div>
+
     <div id="planning-modal" class="modal">
         <div class="modal-content">
             <h3>Wanneer inplannen?</h3>
             <input type="datetime-local" id="plan-date">
             <input type="hidden" id="plan-task-id">
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="confirmPlan()">Opslaan</button>
-                <button class="btn btn-secondary" onclick="closePlanningModal()">Annuleren</button>
+                <button class="btn btn-primary" onclick="confirmPlan()">Bevestigen</button>
+                <button class="btn btn-secondary" onclick="closePlanningModal()">Sluiten</button>
             </div>
         </div>
     </div>
